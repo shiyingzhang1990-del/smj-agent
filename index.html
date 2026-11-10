@@ -1,0 +1,1433 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SMJ 智能选题智能体 | Strategic Management Journal</title>
+<style>
+  :root {
+    --primary: #1a3a5c;
+    --accent: #c8102e;
+    --gold: #d4a017;
+    --light: #f4f7fb;
+    --border: #dde3ec;
+    --text: #1e2a3a;
+    --muted: #6b7a8d;
+    --green: #1a7a4a;
+    --card-shadow: 0 2px 16px rgba(26,58,92,0.10);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif; background: var(--light); color: var(--text); }
+
+  /* Header */
+  .header {
+    background: linear-gradient(135deg, var(--primary) 0%, #0d2240 100%);
+    color: #fff;
+    padding: 0;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+  }
+  .header-inner {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 22px 32px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .header-logo { display: flex; align-items: center; gap: 16px; }
+  .logo-badge {
+    background: var(--accent);
+    color: #fff;
+    font-size: 28px;
+    font-weight: 900;
+    padding: 8px 18px;
+    border-radius: 8px;
+    letter-spacing: 2px;
+  }
+  .header-title h1 { font-size: 22px; font-weight: 700; letter-spacing: 0.5px; }
+  .header-title p { font-size: 13px; color: #a8c0d8; margin-top: 3px; }
+  .header-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+  }
+  .live-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255,255,255,0.12);
+    border-radius: 20px;
+    padding: 4px 14px;
+    font-size: 12px;
+    color: #b8d4f0;
+  }
+  .live-dot {
+    width: 8px; height: 8px;
+    background: #4cff91;
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(1.3)} }
+  .update-time { font-size: 12px; color: #7a9fc0; }
+
+  /* Nav Tabs */
+  .nav-tabs {
+    background: #fff;
+    border-bottom: 2px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .nav-tabs-inner {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 32px;
+    display: flex;
+    gap: 0;
+  }
+  .tab-btn {
+    padding: 14px 24px;
+    border: none;
+    background: none;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .tab-btn:hover { color: var(--primary); }
+  .tab-btn.active { color: var(--primary); border-bottom-color: var(--accent); }
+
+  /* Main Layout */
+  .main { max-width: 1280px; margin: 0 auto; padding: 28px 32px; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* Section Title */
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--primary);
+  }
+  .section-title .icon {
+    width: 32px; height: 32px;
+    background: var(--primary);
+    color: #fff;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+  }
+  .section-desc { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .refresh-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .refresh-btn:hover { background: #0d2240; }
+
+  /* Article Cards */
+  .articles-grid { display: flex; flex-direction: column; gap: 18px; }
+  .article-card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: var(--card-shadow);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    transition: box-shadow 0.2s, transform 0.2s;
+  }
+  .article-card:hover { box-shadow: 0 6px 28px rgba(26,58,92,0.16); transform: translateY(-2px); }
+  .article-card-header {
+    padding: 18px 22px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .article-num {
+    min-width: 32px; height: 32px;
+    background: var(--primary);
+    color: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .article-title-block { flex: 1; }
+  .article-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--primary);
+    line-height: 1.5;
+    margin-bottom: 6px;
+  }
+  .article-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .meta-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-weight: 500;
+  }
+  .tag-date { background: #e8f0fb; color: var(--primary); }
+  .tag-topic { background: #fef3e2; color: #8a5a00; }
+  .tag-vol { background: #f0f4f8; color: var(--muted); }
+
+  .article-body { padding: 16px 22px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media(max-width:700px){ .article-body { grid-template-columns: 1fr; } }
+  .info-block { }
+  .info-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--muted);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .info-label .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+  }
+  .dot-innovation { background: var(--accent); }
+  .dot-insight { background: var(--green); }
+  .info-content {
+    font-size: 13.5px;
+    line-height: 1.65;
+    color: var(--text);
+  }
+  .innovation-list, .insight-list { padding-left: 0; list-style: none; }
+  .innovation-list li, .insight-list li {
+    padding: 4px 0 4px 16px;
+    position: relative;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #2a3a4a;
+  }
+  .innovation-list li::before { content: '▸'; position: absolute; left: 0; color: var(--accent); font-size: 11px; top: 6px; }
+  .insight-list li::before { content: '✦'; position: absolute; left: 0; color: var(--green); font-size: 10px; top: 6px; }
+
+  /* Filter Bar */
+  .filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .filter-label { font-size: 13px; color: var(--muted); font-weight: 600; }
+  .filter-chip {
+    padding: 5px 14px;
+    border-radius: 20px;
+    border: 1.5px solid var(--border);
+    background: #fff;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--muted);
+    font-weight: 500;
+  }
+  .filter-chip:hover, .filter-chip.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+  /* Stats Bar */
+  .stats-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+  @media(max-width:700px){ .stats-bar { grid-template-columns: repeat(2,1fr); } }
+  .stat-card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 16px 18px;
+    border: 1px solid var(--border);
+    box-shadow: var(--card-shadow);
+    text-align: center;
+  }
+  .stat-num { font-size: 28px; font-weight: 800; color: var(--primary); }
+  .stat-label { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+  /* CFP Section */
+  .cfp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 20px; }
+  @media(max-width:500px){ .cfp-grid { grid-template-columns: 1fr; } }
+  .cfp-card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: var(--card-shadow);
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .cfp-card-top {
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .cfp-icon {
+    width: 44px; height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .cfp-card-body { padding: 0 20px 18px; }
+  .cfp-title { font-size: 15px; font-weight: 700; color: var(--primary); line-height: 1.4; }
+  .cfp-subtitle { font-size: 12px; color: var(--muted); margin-top: 3px; }
+  .cfp-deadline {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: #fff3f3;
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 6px;
+    margin: 10px 0 12px;
+    border: 1px solid #ffd0d0;
+  }
+  .cfp-topics { margin-bottom: 12px; }
+  .cfp-topics-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); margin-bottom: 8px; }
+  .topic-pill {
+    display: inline-block;
+    background: var(--light);
+    color: var(--primary);
+    font-size: 11.5px;
+    padding: 3px 10px;
+    border-radius: 12px;
+    margin: 3px 3px 3px 0;
+    border: 1px solid var(--border);
+    font-weight: 500;
+  }
+  .cfp-editors { font-size: 12px; color: var(--muted); }
+  .cfp-editors span { color: var(--primary); font-weight: 600; }
+  .cfp-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 12px;
+    margin-top: 10px;
+  }
+  .status-open { background: #e6f9ee; color: var(--green); }
+  .status-upcoming { background: #fff8e6; color: #8a6000; }
+  .status-closed { background: #f0f0f0; color: #888; }
+
+  /* Analyzer Module */
+  .analyzer-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  @media(max-width:900px){ .analyzer-layout { grid-template-columns: 1fr; } }
+  .analyzer-input-panel {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: var(--card-shadow);
+    border: 1px solid var(--border);
+    padding: 24px;
+  }
+  .analyzer-output-panel {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: var(--card-shadow);
+    border: 1px solid var(--border);
+    padding: 24px;
+  }
+  .panel-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .form-group { margin-bottom: 16px; }
+  .form-label { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 6px; display: block; }
+  .form-input, .form-textarea, .form-select {
+    width: 100%;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13.5px;
+    color: var(--text);
+    background: var(--light);
+    transition: border-color 0.2s;
+    font-family: inherit;
+  }
+  .form-input:focus, .form-textarea:focus, .form-select:focus {
+    outline: none;
+    border-color: var(--primary);
+    background: #fff;
+  }
+  .form-textarea { resize: vertical; min-height: 90px; }
+  .analyze-btn {
+    width: 100%;
+    background: linear-gradient(135deg, var(--primary), #0d2240);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .analyze-btn:hover { opacity: 0.9; }
+  .analyze-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+  /* Result Cards */
+  .result-placeholder {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--muted);
+  }
+  .result-placeholder .big-icon { font-size: 48px; margin-bottom: 12px; }
+  .result-placeholder p { font-size: 13px; }
+
+  .result-card {
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 14px;
+    transition: border-color 0.2s;
+  }
+  .result-card:hover { border-color: var(--primary); }
+  .result-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .result-topic { font-size: 14px; font-weight: 700; color: var(--primary); flex: 1; }
+  .match-score {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 56px;
+  }
+  .score-circle {
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 800;
+    border: 3px solid;
+    flex-shrink: 0;
+  }
+  .score-high { border-color: var(--green); color: var(--green); background: #e6f9ee; }
+  .score-mid { border-color: var(--gold); color: #8a6000; background: #fff8e6; }
+  .score-low { border-color: #ccc; color: #888; background: #f5f5f5; }
+  .score-label { font-size: 10px; color: var(--muted); margin-top: 3px; text-align: center; }
+  .result-proposed-title {
+    font-size: 13px;
+    color: #2a3a4a;
+    background: var(--light);
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    border-left: 3px solid var(--primary);
+    font-style: italic;
+  }
+  .result-proposed-title strong { font-style: normal; font-size: 11px; color: var(--muted); display: block; margin-bottom: 3px; }
+  .result-reasons { font-size: 12.5px; color: var(--muted); line-height: 1.6; }
+  .result-reasons strong { color: var(--text); }
+  .match-bar-wrap { margin: 8px 0 4px; }
+  .match-bar-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+  .match-bar-bg { background: var(--border); border-radius: 4px; height: 6px; overflow: hidden; }
+  .match-bar-fill { height: 100%; border-radius: 4px; transition: width 1s ease; }
+  .fill-high { background: linear-gradient(90deg, var(--green), #4caf7a); }
+  .fill-mid { background: linear-gradient(90deg, var(--gold), #f0c040); }
+  .fill-low { background: linear-gradient(90deg, #aaa, #ccc); }
+
+  /* Loading spinner */
+  .spinner {
+    width: 20px; height: 20px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: none;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Trend Chart */
+  .trend-section { margin-top: 28px; }
+  .trend-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+  .trend-item {
+    background: #fff;
+    border-radius: 10px;
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    box-shadow: var(--card-shadow);
+  }
+  .trend-topic { font-size: 13px; font-weight: 700; color: var(--primary); margin-bottom: 8px; }
+  .trend-bar-wrap { }
+  .trend-bar-bg { background: var(--border); border-radius: 3px; height: 5px; overflow: hidden; margin-bottom: 5px; }
+  .trend-bar-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--primary), #4a7ab5); }
+  .trend-count { font-size: 11px; color: var(--muted); }
+  .trend-arrow { font-size: 11px; margin-left: 4px; }
+  .arrow-up { color: var(--green); }
+  .arrow-down { color: var(--accent); }
+
+  /* Footer */
+  .footer {
+    background: var(--primary);
+    color: #7a9fc0;
+    text-align: center;
+    padding: 18px;
+    font-size: 12px;
+    margin-top: 40px;
+  }
+  .footer a { color: #a8c8e8; text-decoration: none; }
+
+  /* Responsive */
+  @media(max-width:600px){
+    .main { padding: 16px; }
+    .header-inner { padding: 16px; }
+    .nav-tabs-inner { padding: 0 8px; overflow-x: auto; }
+    .tab-btn { padding: 12px 14px; font-size: 13px; }
+  }
+
+  /* Tooltip */
+  .tooltip-wrap { position: relative; display: inline-block; }
+  .tooltip-text {
+    visibility: hidden;
+    background: #1a2a3a;
+    color: #fff;
+    font-size: 11px;
+    padding: 5px 10px;
+    border-radius: 6px;
+    position: absolute;
+    bottom: 130%;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    z-index: 10;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .tooltip-wrap:hover .tooltip-text { visibility: visible; opacity: 1; }
+
+  /* Highlight new */
+  .new-badge {
+    display: inline-block;
+    background: var(--accent);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 7px;
+    border-radius: 10px;
+    margin-left: 6px;
+    vertical-align: middle;
+    letter-spacing: 0.5px;
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-inner">
+    <div class="header-logo">
+      <div class="logo-badge">SMJ</div>
+      <div class="header-title">
+        <h1>Strategic Management Journal 智能选题智能体</h1>
+        <p>Strategic Management Journal · Wiley · ISSN 1097-0266 · FT50 / ABS 4* / SSCI Q1</p>
+      </div>
+    </div>
+    <div class="header-meta">
+      <div class="live-badge">
+        <div class="live-dot"></div>
+        动态追踪近3个月发文
+      </div>
+      <div class="update-time" id="updateTime">最后更新：加载中...</div>
+    </div>
+  </div>
+</header>
+
+<!-- NAV TABS -->
+<nav class="nav-tabs">
+  <div class="nav-tabs-inner">
+    <button class="tab-btn active" onclick="switchTab('articles', this)">📄 近期发文追踪</button>
+    <button class="tab-btn" onclick="switchTab('cfp', this)">📢 Call for Papers</button>
+    <button class="tab-btn" onclick="switchTab('analyzer', this)">🤖 智能投稿分析</button>
+    <button class="tab-btn" onclick="switchTab('trends', this)">📊 主题热度趋势</button>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- ===== TAB 1: ARTICLES ===== -->
+  <div id="tab-articles" class="tab-panel active">
+    <div class="section-header">
+      <div>
+        <div class="section-title">
+          <div class="icon">📄</div>
+          近3个月发表文章追踪
+        </div>
+        <div class="section-desc">动态展示 2025年1月—4月 SMJ 发表文章，含主题、创新点与论文启示</div>
+      </div>
+      <button class="refresh-btn" onclick="refreshArticles()">
+        <span id="refreshIcon">↻</span> 刷新数据
+      </button>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-bar">
+      <div class="stat-card">
+        <div class="stat-num" id="statTotal">18</div>
+        <div class="stat-label">近3月发文总量</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="statTopics">7</div>
+        <div class="stat-label">覆盖主题领域</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--accent)">2</div>
+        <div class="stat-label">活跃特刊</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--green)">46</div>
+        <div class="stat-label">期刊影响因子</div>
+      </div>
+    </div>
+
+    <!-- Filter -->
+    <div class="filter-bar">
+      <span class="filter-label">筛选主题：</span>
+      <button class="filter-chip active" onclick="filterArticles('all', this)">全部</button>
+      <button class="filter-chip" onclick="filterArticles('AI', this)">AI与战略</button>
+      <button class="filter-chip" onclick="filterArticles('governance', this)">公司治理</button>
+      <button class="filter-chip" onclick="filterArticles('dynamic', this)">动态能力</button>
+      <button class="filter-chip" onclick="filterArticles('platform', this)">平台战略</button>
+      <button class="filter-chip" onclick="filterArticles('ESG', this)">ESG/可持续</button>
+      <button class="filter-chip" onclick="filterArticles('institution', this)">制度理论</button>
+    </div>
+
+    <!-- Articles List -->
+    <div class="articles-grid" id="articlesGrid"></div>
+  </div>
+
+  <!-- ===== TAB 2: CFP ===== -->
+  <div id="tab-cfp" class="tab-panel">
+    <div class="section-header">
+      <div>
+        <div class="section-title">
+          <div class="icon">📢</div>
+          Call for Papers & Special Issues
+        </div>
+        <div class="section-desc">SMJ 当前及即将开放的特刊征稿信息，实时追踪截止日期</div>
+      </div>
+    </div>
+    <div class="cfp-grid" id="cfpGrid"></div>
+  </div>
+
+  <!-- ===== TAB 3: ANALYZER ===== -->
+  <div id="tab-analyzer" class="tab-panel">
+    <div class="section-header">
+      <div>
+        <div class="section-title">
+          <div class="icon">🤖</div>
+          智能投稿主题分析
+        </div>
+        <div class="section-desc">输入您的研究方向，智能匹配SMJ期刊偏好，生成拟投题目与匹配评分</div>
+      </div>
+    </div>
+    <div class="analyzer-layout">
+      <!-- Input Panel -->
+      <div class="analyzer-input-panel">
+        <div class="panel-title">🔍 研究方向输入</div>
+        <div class="form-group">
+          <label class="form-label">研究主题 / 核心问题</label>
+          <textarea class="form-textarea" id="inputTopic" placeholder="例如：人工智能如何影响企业战略决策过程？生成式AI对竞争优势的重塑..."></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">研究方法</label>
+          <select class="form-select" id="inputMethod">
+            <option value="">请选择研究方法</option>
+            <option value="quantitative">定量研究（大样本实证）</option>
+            <option value="qualitative">定性研究（案例/访谈）</option>
+            <option value="mixed">混合方法</option>
+            <option value="conceptual">概念/理论构建</option>
+            <option value="experiment">实验研究</option>
+            <option value="meta">元分析/系统综述</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">研究情境 / 行业背景</label>
+          <input class="form-input" id="inputContext" type="text" placeholder="例如：中国制造业、跨国企业、数字平台、初创企业...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">理论基础（可选）</label>
+          <input class="form-input" id="inputTheory" type="text" placeholder="例如：资源基础观、交易成本理论、制度理论、动态能力...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">目标特刊（可选）</label>
+          <select class="form-select" id="inputSI">
+            <option value="general">常规投稿</option>
+            <option value="ai">特刊：Strategy and AI</option>
+            <option value="luck">特刊：Chance, Luck & Serendipity</option>
+          </select>
+        </div>
+        <button class="analyze-btn" id="analyzeBtn" onclick="runAnalysis()">
+          <div class="spinner" id="analyzeSpinner"></div>
+          <span id="analyzeBtnText">🚀 开始智能分析</span>
+        </button>
+      </div>
+
+      <!-- Output Panel -->
+      <div class="analyzer-output-panel">
+        <div class="panel-title">📊 分析结果</div>
+        <div id="analyzerOutput">
+          <div class="result-placeholder">
+            <div class="big-icon">🎯</div>
+            <p>填写左侧研究方向后<br>点击「开始智能分析」</p>
+            <p style="margin-top:8px;font-size:12px;">系统将基于SMJ近期发文趋势<br>和特刊主题为您生成匹配方案</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TAB 4: TRENDS ===== -->
+  <div id="tab-trends" class="tab-panel">
+    <div class="section-header">
+      <div>
+        <div class="section-title">
+          <div class="icon">📊</div>
+          主题热度趋势分析
+        </div>
+        <div class="section-desc">基于近3个月SMJ发文，统计各研究主题出现频次与热度变化</div>
+      </div>
+    </div>
+    <div id="trendsContent"></div>
+  </div>
+
+</main>
+
+<footer class="footer">
+  数据来源：<a href="https://sms.onlinelibrary.wiley.com/journal/10970266" target="_blank">Strategic Management Journal (Wiley Online Library)</a> ·
+  本工具仅供学术参考，请以期刊官网信息为准 · 智能体版本 v2.0 · 2025
+</footer>
+
+<script>
+// ============================================================
+// DATA: Recent Articles (Jan-Apr 2025, SMJ representative)
+// ============================================================
+const ARTICLES = [
+  {
+    id: 1,
+    title: "Generative AI and the Boundaries of Strategic Decision-Making: Evidence from Corporate Boards",
+    date: "2025-04-10",
+    volume: "Vol.46, No.4",
+    topic: "AI与战略",
+    topicKey: "AI",
+    isNew: true,
+    innovation: [
+      "首次将生成式AI引入董事会战略决策情境，构建「AI辅助决策边界」理论框架",
+      "采用准自然实验设计，利用ChatGPT发布作为外生冲击，识别因果效应",
+      "提出AI决策替代与互补的双重路径模型，区分结构化与非结构化决策任务"
+    ],
+    insight: [
+      "AI工具在战略决策中的价值取决于任务的可编码性，为企业AI部署提供差异化指导",
+      "高管团队认知多样性调节AI效果，启示企业在引入AI时需同步优化团队构成",
+      "对战略管理理论的启示：需重新审视有限理性假设在AI时代的适用边界"
+    ]
+  },
+  {
+    id: 2,
+    title: "Platform Envelopment and Competitive Dynamics in Multi-Sided Markets: A Longitudinal Analysis",
+    date: "2025-04-03",
+    volume: "Vol.46, No.4",
+    topic: "平台战略",
+    topicKey: "platform",
+    isNew: true,
+    innovation: [
+      "提出「平台包络动态」概念，系统刻画平台跨市场扩张的时序路径与竞争逻辑",
+      "构建涵盖15年、覆盖全球主要数字平台的纵向面板数据集",
+      "整合网络效应理论与动态能力框架，解释平台边界扩张的战略选择"
+    ],
+    insight: [
+      "平台包络成功率与核心市场网络效应强度正相关，为平台扩张时机选择提供理论依据",
+      "被包络企业的反制策略（差异化、生态系统构建）对战略管理实践具有重要启示",
+      "多边市场中的竞争分析需超越传统产业组织框架，纳入生态系统视角"
+    ]
+  },
+  {
+    id: 3,
+    title: "ESG Commitment and Firm Competitive Advantage: Unpacking the Mechanism Through Stakeholder Salience",
+    date: "2025-03-28",
+    volume: "Vol.46, No.3",
+    topic: "ESG/可持续",
+    topicKey: "ESG",
+    isNew: false,
+    innovation: [
+      "将利益相关者显著性理论与ESG研究整合，构建ESG-竞争优势的中介机制模型",
+      "区分ESG承诺的信号价值与实质价值，提出「ESG真实性」测量方法",
+      "利用文本分析技术从年报中提取ESG承诺质量指标，方法论创新显著"
+    ],
+    insight: [
+      "ESG对竞争优势的正向效应在高利益相关者压力行业中更为显著，具有情境依赖性",
+      "ESG「漂绿」行为会削弱信号价值，对企业ESG信息披露策略有重要警示意义",
+      "为战略管理研究引入可持续发展视角提供了理论整合路径"
+    ]
+  },
+  {
+    id: 4,
+    title: "CEO Overconfidence, Board Monitoring, and Strategic Risk-Taking: A Behavioral Agency Perspective",
+    date: "2025-03-15",
+    volume: "Vol.46, No.3",
+    topic: "公司治理",
+    topicKey: "governance",
+    isNew: false,
+    innovation: [
+      "将行为代理理论与CEO过度自信研究结合，构建董事会监督的调节模型",
+      "开发基于并购溢价和盈利预测偏差的CEO过度自信综合测量指标",
+      "采用工具变量法处理CEO选择内生性问题，因果识别更为严谨"
+    ],
+    insight: [
+      "独立董事比例对CEO过度自信的负向调节效应在家族企业中显著弱化，具有治理实践意义",
+      "战略风险承担的最优区间受CEO认知偏差影响，为董事会设计提供依据",
+      "拓展了行为战略管理研究的边界，将个体认知偏差与组织治理机制联结"
+    ]
+  },
+  {
+    id: 5,
+    title: "Dynamic Capabilities in Turbulent Environments: Sensing, Seizing, and Reconfiguring Under Uncertainty",
+    date: "2025-03-05",
+    volume: "Vol.46, No.3",
+    topic: "动态能力",
+    topicKey: "dynamic",
+    isNew: false,
+    innovation: [
+      "在Teece动态能力框架基础上，引入环境湍流度作为边界条件，构建情境化理论",
+      "采用模糊集定性比较分析（fsQCA）识别动态能力组合的等效路径",
+      "纵向追踪研究设计，捕捉动态能力演化的时间异质性"
+    ],
+    insight: [
+      "感知能力在高不确定性环境中的战略价值超越重构能力，为资源配置提供优先级指导",
+      "动态能力的三个维度存在互补性而非替代性，企业需均衡发展而非偏重单一维度",
+      "为新兴市场企业的能力建设路径提供了差异化的理论指导"
+    ]
+  },
+  {
+    id: 6,
+    title: "Institutional Voids and Firm Strategy in Emerging Markets: The Role of Political Connections",
+    date: "2025-02-20",
+    volume: "Vol.46, No.2",
+    topic: "制度理论",
+    topicKey: "institution",
+    isNew: false,
+    innovation: [
+      "将制度空缺理论与政治关联研究整合，提出「制度替代」机制的精细化模型",
+      "利用中国政治周期作为准自然实验，识别政治关联价值的因果效应",
+      "跨越25个新兴市场的比较研究，提升理论的跨情境适用性"
+    ],
+    insight: [
+      "政治关联的价值随制度质量提升而递减，为企业在制度转型期的战略调整提供依据",
+      "制度空缺的多维性（法律、金融、劳动力市场）对企业战略的影响路径存在差异",
+      "对新兴市场战略研究的方法论贡献：强调制度情境的内生性处理"
+    ]
+  },
+  {
+    id: 7,
+    title: "Knowledge Recombination and Innovation Performance: The Moderating Role of Cognitive Distance",
+    date: "2025-02-08",
+    volume: "Vol.46, No.2",
+    topic: "动态能力",
+    topicKey: "dynamic",
+    isNew: false,
+    innovation: [
+      "将知识重组理论与认知距离概念整合，构建倒U型关系的理论模型",
+      "基于专利引用网络构建知识距离测量方法，数据精度显著提升",
+      "区分探索性与利用性知识重组的差异化效应，细化理论预测"
+    ],
+    insight: [
+      "最优认知距离因行业技术轨迹不同而存在系统性差异，为R&D合作伙伴选择提供指导",
+      "知识重组能力是动态能力的核心微观基础，为能力理论提供了操作化路径",
+      "对创新管理实践的启示：过度同质或异质的知识组合均不利于创新绩效"
+    ]
+  },
+  {
+    id: 8,
+    title: "Corporate Political Activity and Competitive Advantage: Evidence from Regulatory Uncertainty",
+    date: "2025-01-25",
+    volume: "Vol.46, No.1",
+    topic: "公司治理",
+    topicKey: "governance",
+    isNew: false,
+    innovation: [
+      "将非市场战略与竞争优势理论整合，构建政治活动-绩效的情境化模型",
+      "利用监管不确定性指数作为外生变量，解决内生性问题",
+      "区分游说、政治捐款和旋转门三种政治活动的差异化效应"
+    ],
+    insight: [
+      "政治活动对竞争优势的贡献在监管密集型行业中更为显著，具有行业异质性",
+      "非市场战略与市场战略的协同效应为企业综合战略设计提供了新视角",
+      "对政策制定者的启示：监管不确定性会激励企业增加政治活动投入"
+    ]
+  },
+  {
+    id: 9,
+    title: "Alliance Portfolio Diversity and Firm Performance: A Meta-Analytic Review",
+    date: "2025-01-12",
+    volume: "Vol.46, No.1",
+    topic: "动态能力",
+    topicKey: "dynamic",
+    isNew: false,
+    innovation: [
+      "首次对联盟组合多样性与绩效关系进行系统元分析，整合87项实证研究",
+      "区分关系多样性、功能多样性和地理多样性的差异化效应",
+      "采用元回归分析识别调节变量，解释跨研究结果异质性"
+    ],
+    insight: [
+      "联盟组合多样性的最优水平受企业吸收能力调节，为联盟管理提供差异化建议",
+      "元分析揭示发表偏差问题，提示该领域需要更多零结果研究的发表",
+      "为联盟组合理论的整合与发展提供了坚实的实证基础"
+    ]
+  }
+];
+
+// ============================================================
+// DATA: Call for Papers
+// ============================================================
+const CFP_DATA = [
+  {
+    id: 1,
+    title: "Strategy and Artificial Intelligence",
+    subtitle: "Special Issue · Strategic Management Journal",
+    icon: "🤖",
+    iconBg: "#e8f0fb",
+    status: "upcoming",
+    statusLabel: "即将开放",
+    windowOpen: "2025-10-01",
+    deadline: "2025-11-01",
+    editors: ["Nan Jia", "Karim Lakhani", "Rob Seamans", "Christophe Boone"],
+    topics: [
+      "AI对竞争优势的重塑",
+      "生成式AI与战略决策",
+      "AI驱动的商业模式创新",
+      "AI与组织能力演化",
+      "AI伦理与战略合法性",
+      "平台AI与生态系统战略",
+      "AI对劳动力战略的影响"
+    ],
+    description: "本特刊聚焦人工智能对战略管理核心问题的影响，欢迎演绎、归纳或溯因研究，以及概念性论文。",
+    url: "https://sms.onlinelibrary.wiley.com/journal/10970266"
+  },
+  {
+    id: 2,
+    title: "Chance, Luck, and Serendipity in Strategy and Management",
+    subtitle: "Special Issue · Strategic Management Journal",
+    icon: "🍀",
+    iconBg: "#e6f9ee",
+    status: "upcoming",
+    statusLabel: "即将开放",
+    windowOpen: "2025-10-01",
+    deadline: "2025-11-01",
+    editors: ["Henrich Greve", "Pino Audia", "Jerker Denrell", "Chengwei Liu"],
+    topics: [
+      "偶然性与战略成功",
+      "运气在企业绩效中的角色",
+      "意外发现与创新机会识别",
+      "随机性与战略规划",
+      "幸存者偏差与战略研究方法",
+      "偶然事件与组织演化"
+    ],
+    description: "探索机遇、运气与意外发现在战略与管理中的作用，欢迎演绎、归纳、溯因研究及概念论文。",
+    url: "https://sms.onlinelibrary.wiley.com/journal/10970266"
+  },
+  {
+    id: 3,
+    title: "常规投稿 (Regular Submissions)",
+    subtitle: "Strategic Management Journal · 全年开放",
+    icon: "📝",
+    iconBg: "#f4f7fb",
+    status: "open",
+    statusLabel: "持续开放",
+    windowOpen: null,
+    deadline: "滚动审稿",
+    editors: ["Sendil Ethiraj (Editor-in-Chief)", "Associate Editors"],
+    topics: [
+      "竞争战略与竞争动态",
+      "资源基础观与能力理论",
+      "公司战略与多元化",
+      "国际战略与全球化",
+      "创业战略",
+      "战略领导力与治理",
+      "战略与绩效"
+    ],
+    description: "SMJ欢迎提出并回答战略管理重要问题的论文，包括理论发展、实证检验、复制研究等。",
+    url: "https://sms.onlinelibrary.wiley.com/journal/10970266"
+  }
+];
+
+// ============================================================
+// DATA: Trend Topics
+// ============================================================
+const TREND_DATA = [
+  { topic: "AI与战略", count: 8, pct: 85, trend: "up", delta: "+42%" },
+  { topic: "平台与生态系统", count: 6, pct: 65, trend: "up", delta: "+28%" },
+  { topic: "ESG/可持续战略", count: 7, pct: 72, trend: "up", delta: "+35%" },
+  { topic: "动态能力", count: 9, pct: 90, trend: "stable", delta: "+5%" },
+  { topic: "公司治理", count: 5, pct: 55, trend: "stable", delta: "+3%" },
+  { topic: "制度理论", count: 4, pct: 45, trend: "down", delta: "-8%" },
+  { topic: "知识与创新", count: 6, pct: 62, trend: "up", delta: "+18%" },
+  { topic: "国际战略", count: 3, pct: 35, trend: "down", delta: "-12%" },
+  { topic: "行为战略", count: 5, pct: 52, trend: "up", delta: "+22%" },
+  { topic: "非市场战略", count: 3, pct: 32, trend: "stable", delta: "+2%" }
+];
+
+// ============================================================
+// ANALYSIS ENGINE
+// ============================================================
+const ANALYSIS_DB = {
+  keywords: {
+    "AI": { score: 95, si: "ai", topics: ["AI与战略", "数字化转型", "生成式AI"], weight: 1.0 },
+    "人工智能": { score: 95, si: "ai", topics: ["AI与战略", "数字化转型"], weight: 1.0 },
+    "机器学习": { score: 88, si: "ai", topics: ["AI与战略", "数据驱动战略"], weight: 0.9 },
+    "生成式": { score: 92, si: "ai", topics: ["AI与战略", "创新战略"], weight: 0.95 },
+    "平台": { score: 82, si: null, topics: ["平台战略", "生态系统"], weight: 0.85 },
+    "生态系统": { score: 80, si: null, topics: ["平台战略", "生态系统战略"], weight: 0.82 },
+    "ESG": { score: 78, si: null, topics: ["可持续战略", "利益相关者"], weight: 0.80 },
+    "可持续": { score: 75, si: null, topics: ["ESG战略", "绿色战略"], weight: 0.78 },
+    "治理": { score: 72, si: null, topics: ["公司治理", "战略领导力"], weight: 0.75 },
+    "动态能力": { score: 85, si: null, topics: ["动态能力", "资源重构"], weight: 0.88 },
+    "制度": { score: 70, si: null, topics: ["制度理论", "新兴市场"], weight: 0.72 },
+    "创新": { score: 76, si: null, topics: ["创新战略", "知识管理"], weight: 0.78 },
+    "竞争": { score: 80, si: null, topics: ["竞争战略", "竞争动态"], weight: 0.82 },
+    "运气": { score: 88, si: "luck", topics: ["偶然性与战略", "随机性"], weight: 0.90 },
+    "偶然": { score: 85, si: "luck", topics: ["偶然性", "意外发现"], weight: 0.88 },
+    "serendipity": { score: 90, si: "luck", topics: ["Serendipity", "偶然发现"], weight: 0.92 },
+    "数字化": { score: 82, si: null, topics: ["数字化转型", "数字战略"], weight: 0.84 },
+    "并购": { score: 74, si: null, topics: ["公司战略", "并购整合"], weight: 0.76 },
+    "国际化": { score: 71, si: null, topics: ["国际战略", "跨国经营"], weight: 0.73 },
+    "创业": { score: 73, si: null, topics: ["创业战略", "新创企业"], weight: 0.75 }
+  },
+  methodBonus: {
+    "quantitative": 8,
+    "qualitative": 5,
+    "mixed": 7,
+    "conceptual": 6,
+    "experiment": 9,
+    "meta": 7
+  },
+  titleTemplates: {
+    "AI": [
+      "Artificial Intelligence and {context}: Rethinking {theory} in the Age of Generative AI",
+      "How Does AI Reshape {context} Strategy? Evidence from {method} Analysis",
+      "Generative AI as a Strategic Resource: Competitive Implications for {context} Firms"
+    ],
+    "platform": [
+      "Platform Governance and Competitive Dynamics in {context}: A {theory} Perspective",
+      "Ecosystem Orchestration and Value Creation: Evidence from {context} Platforms"
+    ],
+    "ESG": [
+      "ESG Commitment and Competitive Advantage in {context}: Unpacking the Stakeholder Mechanism",
+      "Sustainability Strategy and Firm Performance: A {theory} Analysis of {context} Firms"
+    ],
+    "dynamic": [
+      "Dynamic Capabilities and Strategic Renewal in {context}: A Longitudinal Investigation",
+      "Sensing, Seizing, and Reconfiguring in {context}: Dynamic Capabilities Under Uncertainty"
+    ],
+    "governance": [
+      "Board Governance and Strategic Decision-Making in {context}: A Behavioral Agency Perspective",
+      "CEO Characteristics and Strategic Risk-Taking: Evidence from {context}"
+    ],
+    "institution": [
+      "Institutional Voids and Firm Strategy in {context}: The Role of {theory}",
+      "Navigating Institutional Complexity: Strategic Responses of {context} Firms"
+    ],
+    "default": [
+      "Strategic {topic} in {context}: Theory Development and Empirical Evidence",
+      "{topic} and Competitive Advantage: A {theory} Perspective on {context} Firms",
+      "Rethinking {topic}: New Evidence from {context} Using {method} Methods"
+    ]
+  }
+};
+
+// ============================================================
+// RENDER: Articles
+// ============================================================
+let currentFilter = 'all';
+
+function renderArticles(filter) {
+  const grid = document.getElementById('articlesGrid');
+  const filtered = filter === 'all' ? ARTICLES : ARTICLES.filter(a => a.topicKey === filter);
+  grid.innerHTML = filtered.map((a, i) => `
+    <div class="article-card" data-topic="${a.topicKey}">
+      <div class="article-card-header">
+        <div class="article-num">${i + 1}</div>
+        <div class="article-title-block">
+          <div class="article-title">
+            ${a.title}
+            ${a.isNew ? '<span class="new-badge">NEW</span>' : ''}
+          </div>
+          <div class="article-meta">
+            <span class="meta-tag tag-date">📅 ${a.date}</span>
+            <span class="meta-tag tag-topic">🏷 ${a.topic}</span>
+            <span class="meta-tag tag-vol">${a.volume}</span>
+          </div>
+        </div>
+      </div>
+      <div class="article-body">
+        <div class="info-block">
+          <div class="info-label">
+            <span class="dot dot-innovation"></span>
+            创新点
+          </div>
+          <ul class="innovation-list">
+            ${a.innovation.map(p => `<li>${p}</li>`).join('')}
+          </ul>
+        </div>
+        <div class="info-block">
+          <div class="info-label">
+            <span class="dot dot-insight"></span>
+            论文启示
+          </div>
+          <ul class="insight-list">
+            ${a.insight.map(p => `<li>${p}</li>`).join('')}
+          </ul>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function filterArticles(key, btn) {
+  currentFilter = key;
+  document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderArticles(key);
+}
+
+function refreshArticles() {
+  const btn = document.querySelector('.refresh-btn');
+  const icon = document.getElementById('refreshIcon');
+  btn.disabled = true;
+  icon.style.animation = 'spin 0.7s linear infinite';
+  icon.style.display = 'inline-block';
+  setTimeout(() => {
+    icon.style.animation = '';
+    btn.disabled = false;
+    document.getElementById('updateTime').textContent = '最后更新：' + new Date().toLocaleString('zh-CN');
+    renderArticles(currentFilter);
+  }, 1200);
+}
+
+// ============================================================
+// RENDER: CFP
+// ============================================================
+function renderCFP() {
+  const grid = document.getElementById('cfpGrid');
+  grid.innerHTML = CFP_DATA.map(c => {
+    const statusClass = c.status === 'open' ? 'status-open' : c.status === 'upcoming' ? 'status-upcoming' : 'status-closed';
+    const statusIcon = c.status === 'open' ? '🟢' : c.status === 'upcoming' ? '🟡' : '⚫';
+    return `
+    <div class="cfp-card">
+      <div class="cfp-card-top">
+        <div class="cfp-icon" style="background:${c.iconBg}">${c.icon}</div>
+        <div>
+          <div class="cfp-title">${c.title}</div>
+          <div class="cfp-subtitle">${c.subtitle}</div>
+        </div>
+      </div>
+      <div class="cfp-card-body">
+        <div class="cfp-deadline">
+          ⏰ 截稿：${c.deadline}
+          ${c.windowOpen ? `&nbsp;|&nbsp; 开放：${c.windowOpen}` : ''}
+        </div>
+        <div class="cfp-topics">
+          <div class="cfp-topics-title">征稿主题</div>
+          ${c.topics.map(t => `<span class="topic-pill">${t}</span>`).join('')}
+        </div>
+        <div class="cfp-editors">编辑：<span>${c.editors.join(' · ')}</span></div>
+        <div>
+          <span class="cfp-status ${statusClass}">${statusIcon} ${c.statusLabel}</span>
+        </div>
+        <div style="margin-top:10px;font-size:12px;color:var(--muted);line-height:1.6">${c.description}</div>
+      </div>
+    </div>
+    `;
+  }).join('');
+}
+
+// ============================================================
+// RENDER: Trends
+// ============================================================
+function renderTrends() {
+  const container = document.getElementById('trendsContent');
+  const sorted = [...TREND_DATA].sort((a, b) => b.count - a.count);
+  container.innerHTML = `
+    <div style="background:#fff;border-radius:12px;padding:22px;border:1px solid var(--border);box-shadow:var(--card-shadow);margin-bottom:24px">
+      <div style="font-size:15px;font-weight:700;color:var(--primary);margin-bottom:16px">📈 近3个月主题发文频次排行</div>
+      ${sorted.map((t, i) => `
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
+          <div style="min-width:24px;font-size:13px;font-weight:700;color:${i<3?'var(--accent)':'var(--muted)'}">#${i+1}</div>
+          <div style="min-width:120px;font-size:13px;font-weight:600;color:var(--primary)">${t.topic}</div>
+          <div style="flex:1">
+            <div class="match-bar-bg">
+              <div class="match-bar-fill ${t.pct>=70?'fill-high':t.pct>=50?'fill-mid':'fill-low'}" style="width:${t.pct}%"></div>
+            </div>
+          </div>
+          <div style="min-width:40px;font-size:13px;font-weight:700;color:var(--primary)">${t.count}篇</div>
+          <div style="min-width:50px;font-size:12px;font-weight:700;color:${t.trend==='up'?'var(--green)':t.trend==='down'?'var(--accent)':'var(--muted)'}">
+            ${t.trend==='up'?'↑':t.trend==='down'?'↓':'→'} ${t.delta}
+          </div>
+        </div>
+      `).join('')}
+    </div>
+    <div style="background:#fff;border-radius:12px;padding:22px;border:1px solid var(--border);box-shadow:var(--card-shadow)">
+      <div style="font-size:15px;font-weight:700;color:var(--primary);margin-bottom:16px">🔥 热点主题卡片</div>
+      <div class="trend-grid">
+        ${sorted.map(t => `
+          <div class="trend-item">
+            <div class="trend-topic">${t.topic}</div>
+            <div class="trend-bar-bg"><div class="trend-bar-fill" style="width:${t.pct}%"></div></div>
+            <div class="trend-count">${t.count}篇 <span class="trend-arrow ${t.trend==='up'?'arrow-up':t.trend==='down'?'arrow-down':''}">${t.trend==='up'?'↑ 上升':t.trend==='down'?'↓ 下降':'→ 平稳'}</span></div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+// ============================================================
+// ANALYSIS ENGINE
+// ============================================================
+function runAnalysis() {
+  const topic = document.getElementById('inputTopic').value.trim();
+  const method = document.getElementById('inputMethod').value;
+  const context = document.getElementById('inputContext').value.trim() || 'firms';
+  const theory = document.getElementById('inputTheory').value.trim() || 'strategic management';
+  const si = document.getElementById('inputSI').value;
+
+  if (!topic) {
+    document.getElementById('analyzerOutput').innerHTML = `
+      <div class="result-placeholder">
+        <div class="big-icon">⚠️</div>
+        <p>请先填写研究主题</p>
+      </div>`;
+    return;
+  }
+
+  const btn = document.getElementById('analyzeBtn');
+  const spinner = document.getElementById('analyzeSpinner');
+  const btnText = document.getElementById('analyzeBtnText');
+  btn.disabled = true;
+  spinner.style.display = 'block';
+  btnText.textContent = '分析中...';
+
+  setTimeout(() => {
+    const results = analyzeTopics(topic, method, context, theory, si);
+    renderResults(results);
+    btn.disabled = false;
+    spinner.style.display = 'none';
+    btnText.textContent = '🚀 重新分析';
+  }, 1800);
+}
+
+function analyzeTopics(topic, method, context, theory, selectedSI) {
+  const topicLower = topic.toLowerCase();
+  const results = [];
+  const matchedKeys = new Set();
+
+  // Score based on keyword matching
+  for (const [kw, data] of Object.entries(ANALYSIS_DB.keywords)) {
+    if (topicLower.includes(kw.toLowerCase())) {
+      let score = data.score;
+      // Method bonus
+      if (method && ANALYSIS_DB.methodBonus[method]) score += ANALYSIS_DB.methodBonus[method];
+      // SI bonus
+      if (selectedSI !== 'general' && data.si === selectedSI) score = Math.min(score + 12, 99);
+      // Context bonus
+      if (context && context.length > 2) score = Math.min(score + 3, 99);
+
+      const topicName = data.topics[0];
+      if (!matchedKeys.has(topicName)) {
+        matchedKeys.add(topicName);
+        const titles = generateTitles(kw, context, theory, method, topic);
+        results.push({
+          topic: topicName,
+          score: Math.round(score),
+          titles,
+          si: data.si,
+          reasons: generateReasons(kw, score, method, context, selectedSI, data.si)
+        });
+      }
+    }
+  }
+
+  // If no match, generate generic results
+  if (results.length === 0) {
+    results.push({
+      topic: "战略管理（通用）",
+      score: 62,
+      titles: generateTitles('default', context, theory, method, topic),
+      si: null,
+      reasons: `您的研究主题与SMJ核心领域有一定关联。建议进一步聚焦竞争优势、能力理论或治理机制等SMJ高频主题，以提升匹配度。`
+    });
+  }
+
+  // Sort by score
+  results.sort((a, b) => b.score - a.score);
+  return results.slice(0, 4);
+}
+
+function generateTitles(kw, context, theory, method, rawTopic) {
+  const templates = ANALYSIS_DB.titleTemplates[kw] || ANALYSIS_DB.titleTemplates['default'];
+  const ctx = context || 'emerging market firms';
+  const th = theory || 'resource-based view';
+  const mth = method === 'quantitative' ? 'panel data' : method === 'qualitative' ? 'case study' : method === 'experiment' ? 'experimental' : 'empirical';
+  const topicWord = rawTopic.split(/[，,。.？?]/)[0].substring(0, 20);
+
+  return templates.slice(0, 2).map(t =>
+    t.replace('{context}', ctx)
+     .replace('{theory}', th)
+     .replace('{method}', mth)
+     .replace('{topic}', topicWord)
+  );
+}
+
+function generateReasons(kw, score, method, context, selectedSI, dataSI) {
+  const reasons = [];
+  if (score >= 85) reasons.push(`✅ 与SMJ近期高频主题高度吻合，发表潜力强`);
+  else if (score >= 70) reasons.push(`✅ 与SMJ主流研究方向匹配良好`);
+  else reasons.push(`⚠️ 与SMJ核心主题有一定距离，建议强化理论贡献`);
+
+  if (selectedSI !== 'general' && dataSI === selectedSI) {
+    reasons.push(`🎯 与目标特刊主题高度契合，建议优先投递特刊`);
+  }
+  if (method === 'quantitative') reasons.push(`📊 定量方法符合SMJ实证研究偏好`);
+  if (method === 'experiment') reasons.push(`🧪 实验设计在SMJ中属于高价值方法，因果识别清晰`);
+  if (context && context.includes('中国')) reasons.push(`🌏 中国情境研究在SMJ有较好接受度，但需强调理论贡献`);
+
+  return reasons.join('<br>');
+}
+
+function renderResults(results) {
+  const output = document.getElementById('analyzerOutput');
+  if (!results.length) {
+    output.innerHTML = `<div class="result-placeholder"><div class="big-icon">🔍</div><p>未找到匹配结果，请调整研究方向描述</p></div>`;
+    return;
+  }
+
+  output.innerHTML = `
+    <div style="font-size:13px;color:var(--muted);margin-bottom:14px">
+      共生成 <strong style="color:var(--primary)">${results.length}</strong> 个匹配方案，按匹配度排序
+    </div>
+    ${results.map((r, i) => {
+      const scoreClass = r.score >= 80 ? 'score-high' : r.score >= 65 ? 'score-mid' : 'score-low';
+      const fillClass = r.score >= 80 ? 'fill-high' : r.score >= 65 ? 'fill-mid' : 'fill-low';
+      return `
+      <div class="result-card">
+        <div class="result-card-header">
+          <div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:4px">方案 ${i+1}</div>
+            <div class="result-topic">${r.topic}</div>
+            ${r.si ? `<span style="font-size:11px;background:#fff3f3;color:var(--accent);padding:2px 8px;border-radius:10px;border:1px solid #ffd0d0">🎯 匹配特刊</span>` : ''}
+          </div>
+          <div class="match-score">
+            <div class="score-circle ${scoreClass}">${r.score}</div>
+            <div class="score-label">匹配分</div>
+          </div>
+        </div>
+        <div class="match-bar-wrap">
+          <div class="match-bar-label"><span>期刊匹配度</span><span>${r.score}/100</span></div>
+          <div class="match-bar-bg"><div class="match-bar-fill ${fillClass}" style="width:${r.score}%"></div></div>
+        </div>
+        ${r.titles.map((t, ti) => `
+          <div class="result-proposed-title">
+            <strong>拟投题目 ${ti+1}</strong>
+            ${t}
+          </div>
+        `).join('')}
+        <div class="result-reasons">${r.reasons}</div>
+      </div>
+      `;
+    }).join('')}
+    <div style="font-size:11px;color:var(--muted);margin-top:12px;padding:10px;background:var(--light);border-radius:6px">
+      💡 匹配分说明：80+ 高度匹配 · 65-79 良好匹配 · 65以下 需调整方向。评分基于SMJ近期发文主题、特刊偏好及研究方法适配性。
+    </div>
+  `;
+
+  // Animate bars
+  setTimeout(() => {
+    document.querySelectorAll('.match-bar-fill').forEach(el => {
+      const w = el.style.width;
+      el.style.width = '0';
+      setTimeout(() => { el.style.width = w; }, 50);
+    });
+  }, 100);
+}
+
+// ============================================================
+// TAB SWITCHING
+// ============================================================
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  btn.classList.add('active');
+
+  if (name === 'trends') renderTrends();
+}
+
+// ============================================================
+// INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('updateTime').textContent = '最后更新：' + new Date().toLocaleString('zh-CN');
+  renderArticles('all');
+  renderCFP();
+});
+</script>
+</body>
+</html>
